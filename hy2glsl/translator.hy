@@ -25,10 +25,11 @@
   (setv shader [])
   (defn translate [expr env &optional [indent 0] [term True]]
     (defn append [&rest code &kwargs kwargs]
-      (.append shader (+ (* " " (* 2 (if (in "indent" kwargs)
-                                         (get kwargs "indent")
-                                         indent)))
-                         (.join "" (map str code)))))
+      (unless (in "no-code-gen" env)
+        (.append shader (+ (* " " (* 2 (if (in "indent" kwargs)
+                                           (get kwargs "indent")
+                                           indent)))
+                           (.join "" (map str code))))))
 
     ;; Environment procedures to manage variables scope
     (defn mangle-var [var-name]
@@ -46,14 +47,14 @@
       (when (lookup var-name env)
         (print "warning: var" var-name "shadow the environment!"))
       (assoc env var-name (name var-type)))
-    (defn copy-env []
+    (defn copy-env [&optional [env env]]
       ;; Copy the environment
       (setv result {})
       (for [k env]
         (assoc result k (get env k)))
       result)
 
-    (defn infer-type [expr]
+    (defn infer-type [expr &optional [env env]]
       ;; Very primitive type inference...
       (defn infer [expr &optional [no-symbol False]]
         (cond [(and (expression? expr) (in (get expr 0) gl-types))
@@ -74,8 +75,8 @@
                'float]
               [(and (not no-symbol) (integer? expr))
                'int]
-              [(and (symbol? expr) (lookup expr))
-               (lookup expr)]
+              [(and (symbol? expr) (lookup expr env))
+               (lookup expr env)]
               [True None]))
       (setv inferred-type (infer expr))
       (when (not inferred-type)
@@ -88,41 +89,52 @@
              ;; Hy Functions/variables to glsl
              [(= operator 'defn)
               #_(comment
-                  Syntax: (defn name [[arg1 :type] ...] :return-type code)
-                  Argument are list of name and keyword type, empty list is void
-                  Return type is optional, default to void
+                  Syntax: (defn name [[arg :type] ...] (code))
                   )
-              (setv code-pos 3) ; assume no return type
-              (if (keyword? (get expr code-pos))
-                  (do
-                    (setv return-type (name (get expr code-pos)))
-                    (setv code-pos (inc code-pos)))
-                  (setv return-type "void"))
-              (append "\n" :indent 0)
               (setv new-env (copy-env))
+              ;; Add argument to environment
+              (for [arg (get expr 2)]
+                (if (lookup (get arg 0))
+                    (print "warning: shadow var:" (get arg 0))
+                    (assoc new-env (get arg 0) (name (get arg 1)))))
+
+              (defn inject-return []
+                (setv (get expr -1) (quasiquote
+                                      (return (unquote (last expr))))))
+              ;; Test if last instruction is a return statement
+              (setv return-type None)
+              (cond [(not (expression? (last expr)))
+                     (inject-return)]
+                    [(in (get (last expr) 0) '[if do setv])
+                     (setv return-type "void")]
+                    [(not (= (get (last expr) 0) 'return))
+                     (inject-return)])
+              (unless return-type
+                ;; Do a first pass on function body to discover the type of
+                ;; the last expression
+                (setv tmp-env (copy-env new-env))
+                (assoc tmp-env "no-code-gen" True)
+                (translate (cut expr 3) tmp-env)
+                (setv return-type (infer-type (last expr) tmp-env))
+                ;; Add function name to parent environment type
+                (define (get expr 1) return-type))
+
+              (append "\n" :indent 0)
               (append return-type " " (mangle (get expr 1)) "("
                       (if (len (get expr 2))
                           (.join ", " (map (fn [arg]
-                                             (if (lookup (get arg 0))
-                                                 (print "warning: shadow var:"
-                                                        (get arg 0))
-                                                 (assoc new-env
-                                                        (get arg 0)
-                                                        (name (get arg 1))))
                                              (+ (name (get arg 1))
                                                 " " (get arg 0)))
                                            (get expr 2)))
                           "void")
                       ") {\n")
-              ;; Ensure last expression is a return statement
-              (when (and (not (= return-type "void"))
-                         (expression? (last expr))
-                         (not (= (get (last expr) 0) 'return)))
-                (setv (get expr -1) (quasiquote
-                                      (return (unquote (last expr))))))
-              (translate (cut expr code-pos) new-env (inc indent))
+              (translate (cut expr 3) new-env (inc indent))
               (append "}\n")]
              [(= operator 'setv)
+              #_(comment
+                  Syntax: (setv var value)
+                  Type is inferred from the value
+                  )
               (if (lookup (get expr 1))
                   (setv type-str "")
                   (do

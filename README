@@ -3,15 +3,15 @@
 This is an exploratory experiment to translate Hy procedure to GLSL shader,
 inspired by the [varjo translator](https://github.com/cbaggers/varjo).
 
+
 ## Data Types
 
 Uniform, varying and outputs need to be typed. It may be possible to infer
 the type by knowing the associated CPU (e.g. numpy) object type.
 
-Function definitions also need arguments and return type. It may also be
-possible to infer those by doing a first pass on the hy code.
-
-Until then, the Hy syntax is slightly modified to set type through keywords.
+Function arguments also need to be typed. It may be possible to infer
+the type by walking the hy code. Until then, the Hy syntax for function
+argument is slightly modified to set type through keywords.
 
 
 ## Example:
@@ -21,10 +21,10 @@ A mandelbrot fragment shader in Hy:
 (setv MAX_ITER 42.0)
 (print (hy2glsl `(
   (version 350)
-  (uniform iResolution :vec2)
-  (uniform center :vec2)
-  (uniform range :float)
-  (defn mandelbrot-color [[coord :vec2]] :vec3
+  (uniform vec2 iResolution)
+  (uniform vec2 center)
+  (uniform float range)
+  (defn mandelbrot-color [[coord :vec2]]
     (setv idx 0.0)
     (setv z (vec2 0.0))
     (setv c coord)

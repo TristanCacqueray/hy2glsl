@@ -7,8 +7,7 @@
         '(
           (version 450)
           (extension GL_NV_gpu_shader_fp64)
-          (uniform float iTime)
-          )
+          (uniform float iTime))
         #[[
 #version 450
 #extension GL_NV_gpu_shader_fp64 : require
@@ -17,17 +16,16 @@ uniform float iTime;
         ]
        ["Function definition"
        '(
-         (defn empty-vector [] :vec4 (vec4 0.0))
-         (defn main [] (empty-vector))
-         )
+         (defn empty-vector [] (vec4 0.0))
+         (defn test [] (empty-vector)))
        #[[
 
 vec4 empty_vector(void) {
   return vec4(0.0);
 }
 
-void main(void) {
-  empty_vector();
+vec4 test(void) {
+  return empty_vector();
 }
 ]]
         ]
@@ -40,8 +38,7 @@ void main(void) {
             (do
               (setv local-var 44)
               (setv nested-var color)))
-          (setv local-var 43)
-          )
+          (setv local-var 43))
         #[[
 vec4 color = vec4(0.0);
 color = color + 0.5;
@@ -54,6 +51,18 @@ void proc(void) {
   }
 }
 int local_var = 43;
+]]]
+       ["Function signature inference"
+       '(
+         (defn double-vec [[uv :vec2]]
+           (+ uv uv))
+         (setv var (double-vec (vec2 1.0))))
+       #[[
+
+vec2 double_vec(vec2 uv) {
+  return uv + uv;
+}
+vec2 var = double_vec(vec2(1.0));
 ]]]]]
   (setv result (hy2glsl hy-input))
   (if (= result expected-glsl-output)
