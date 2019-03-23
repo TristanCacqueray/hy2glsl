@@ -1,0 +1,74 @@
+# hy2glsl: Hy to GLSL Language Translator
+
+This is an exploratory experiment to translate Hy procedure to GLSL shader,
+inspired by the [varjo translator](https://github.com/cbaggers/varjo).
+
+## Data Types
+
+Uniform, varying and outputs need to be typed. It may be possible to infer
+the type by knowing the associated CPU (e.g. numpy) object type.
+
+Function definitions also need arguments and return type. It may also be
+possible to infer those by doing a first pass on the hy code.
+
+Until then, the Hy syntax is slightly modified to set type through keywords.
+
+
+## Example:
+
+A mandelbrot fragment shader in Hy:
+```
+(setv MAX_ITER 42.0)
+(print (hy2glsl `(
+  (version 350)
+  (uniform iResolution :vec2)
+  (uniform center :vec2)
+  (uniform range :float)
+  (defn mandelbrot-color [[coord :vec2]] :vec3
+    (setv idx 0.0)
+    (setv z (vec2 0.0))
+    (setv c coord)
+    (while (< idx ~MAX_ITER)
+      (setv z (+ (vec2 (- (* z.x z.x) (* z.y z.y))
+                       (* 2.0 z.x z.y))
+                 c))
+      (if (> (dot z z) 500.0)
+        (break))
+      (setv idx (+ idx 1)))
+    (vec3 (* 1.0 (/ idx ~MAX_ITER))))
+  (defn main []
+    (setv uv (- (* (/ gl_FragCoord.xy iResolution.xy) 2.) 1.0))
+    (setv uv.y (* uv.y (- (/ iResolution.y iResolution.x))))
+    (setv pos (+ center (* uv range)))
+    (setv gl_FragColor (vec4 (mandelbrot-color pos) 1.0))))))
+```
+
+Results in:
+
+```
+#version 350
+uniform vec2 iResolution;
+uniform vec2 center;
+uniform float range;
+
+vec3 mandelbrot_color(vec2 coord) {
+  float idx = 0.0;
+  vec2 z = vec2(0.0);
+  vec2 c = coord;
+  while (idx < 42.0) {
+    z = vec2(z.x * z.x - z.y * z.y, 2.0 * z.x * z.y) + c;
+    if (dot(z, z) > 500.0) {
+      break;
+    }
+    idx = idx + 1;
+  }
+  return vec3(1.0 * idx / 42.0);
+}
+
+void main(void) {
+  vec2 uv = gl_FragCoord.xy / iResolution.xy * 2.0 - 1.0;
+  uv.y = uv.y * -iResolution.y / iResolution.x;
+  vec2 pos = center + uv * range;
+  gl_FragColor = vec4(mandelbrot_color(pos), 1.0);
+}
+```
