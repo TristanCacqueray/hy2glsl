@@ -98,6 +98,53 @@ attribute vec2 position;
 void main(void) {
   gl_Position = vec4(position, 0.0, 1.0);
 }
+]]]
+       ["Library: fragment-plane"
+       (library.fragment-plane `(defn color [uv] (vec3 0.)))
+       #[[
+uniform vec2 iResolution;
+uniform vec2 center;
+uniform float range;
+
+vec3 color(vec2 uv) {
+  return vec3(0.0);
+}
+
+void main(void) {
+  vec2 uv = (((gl_FragCoord.xy / iResolution.xy) * 2.0) - 1.0);
+  uv.y = (uv.y * -(iResolution.y / iResolution.x));
+  vec2 pos = (center + (uv * range));
+  gl_FragColor = vec4(color(pos), 1.0);
+}
+]]]
+       ["Library: fragment-plane super-sampling"
+       (library.fragment-plane `(defn color [uv] (vec3 0.)) :super-sampling 4)
+       #[[
+uniform vec2 iResolution;
+uniform vec2 center;
+uniform float range;
+
+vec3 color(vec2 uv) {
+  return vec3(0.0);
+}
+
+void main(void) {
+  vec3 col = vec3(0.0);
+  int m = 0;
+  while (m < 4) {
+    int n = 0;
+    while (n < 4) {
+      vec2 uv = ((((gl_FragCoord.xy + ((vec2(float(m), float(n)) / float(4)) - 0.5)) / iResolution.xy) * 2.0) - 1.0);
+      uv.y = (uv.y * -(iResolution.y / iResolution.x));
+      vec2 pos = (center + (uv * range));
+      col = (col + color(pos));
+      n = (n + 1);
+    }
+    m = (m + 1);
+  }
+  col = (col / float((4 * 4)));
+  gl_FragColor = vec4(col, 1.0);
+}
 ]]]]]
   (setv result (hy2glsl hy-input))
   (if (= result expected-glsl-output)

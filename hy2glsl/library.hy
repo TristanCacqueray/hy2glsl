@@ -15,6 +15,52 @@
 
 (defn vertex-fullscreen [&optional [attribute-name 'position]]
   `(shader
-    (attribute vec2 ~attribute-name)
-    (defn main []
-      (setv gl_Position (vec4 ~attribute-name 0. 1.)))))
+     (attribute vec2 ~attribute-name)
+     (defn main []
+       (setv gl_Position (vec4 ~attribute-name 0. 1.)))))
+
+(defn fragment-plane [color-code &optional
+                      [res-name 'iResolution]
+                      [center-name 'center]
+                      [range-name 'range]
+                      [super-sampling 1]]
+  (when (not (instance? HyExpression (get color-code 0)))
+    (setv color-code (HyExpression [color-code])))
+  ;; Get last function name
+  (setv color-func-name
+        (get (get (list (filter (fn [x] (= (get x 0) 'defn)) color-code)) 0) 1))
+
+  (setv main-code
+        (if (= super-sampling 1)
+            `(
+              (setv uv (- (* (/ gl_FragCoord.xy (.xy ~res-name)) 2.) 1.0))
+              (setv uv.y (* uv.y (- (/ (.y ~res-name) (.x ~res-name)))))
+              (setv pos (+ ~center-name (* uv ~range-name)))
+              (setv gl_FragColor (vec4 (~color-func-name pos) 1.0)))
+            `(
+              (setv col (vec3 0.0))
+              (setv m 0)
+              (while (< m ~super-sampling)
+                (setv n 0)
+                (while (< n ~super-sampling)
+                  (setv uv
+                        (- (* (/ (+ gl_FragCoord.xy
+                                    (- (/ (vec2 (float m) (float n))
+                                          (float ~super-sampling))
+                                       0.5))
+                                 (.xy ~res-name)) 2.) 1.0))
+                  (setv uv.y (* uv.y (- (/ (.y ~res-name) (.x ~res-name)))))
+                  (setv pos (+ ~center-name (* uv ~range-name)))
+                  (setv col (+ col (~color-func-name pos)))
+                  (setv n (+ n 1)))
+                (setv m (+ m 1)))
+              (setv col (/ col (float (* ~super-sampling ~super-sampling))))
+              (setv gl_FragColor (vec4 col 1.0)))))
+
+  `(shader
+     (uniform vec2 ~res-name)
+     (uniform vec2 ~center-name)
+     (uniform float ~range-name)
+     ~@color-code
+     (defn main []
+       ~@main-code)))
