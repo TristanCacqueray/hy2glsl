@@ -145,10 +145,52 @@ void main(void) {
   col = (col / float((4 * 4)));
   gl_FragColor = vec4(col, 1.0);
 }
+]]]
+       ["Library: fragment-plane"
+       (library.fragment-plane `(defn color [uv] (vec3 0.)))
+       #[[
+uniform vec2 iResolution;
+uniform vec2 center;
+uniform float range;
+
+vec3 color(vec2 uv) {
+  return vec3(0.0);
+}
+
+void main(void) {
+  vec2 uv = (((gl_FragCoord.xy / iResolution.xy) * 2.0) - 1.0);
+  uv.y = (uv.y * -(iResolution.y / iResolution.x));
+  vec2 pos = (center + (uv * range));
+  gl_FragColor = vec4(color(pos), 1.0);
+}
+]]]
+       ["Library: color-ifs"
+        `(
+           ~@(library.color-ifs `(setv z (+ (* z z) c)))
+           (defn main [] (color (vec2 0.0))))
+       #[[
+
+vec3 color(vec2 coord) {
+  float idx = 0.0;
+  vec2 z = vec2(0.0);
+  vec2 c = coord;
+  while (idx < 42.0) {
+    z = ((z * z) + c);
+    if (dot(z, z) > 1000.0) {
+      break;
+    }
+    idx = (idx + 1.0);
+  }
+  return vec3((1.0 * (idx / 42.0)));
+}
+
+vec3 main(void) {
+  return color(vec2(0.0));
+}
 ]]]]]
-  (setv result (hy2glsl hy-input))
-  (if (= result expected-glsl-output)
-      (print "== OK:" test "==")
-      (do
-        (print "== KO:" test "==")
-        (print result))))
+        (setv result (hy2glsl hy-input))
+        (if (= result expected-glsl-output)
+            (print "== OK:" test "==")
+            (do
+              (print "== KO:" test "==")
+              (print result))))

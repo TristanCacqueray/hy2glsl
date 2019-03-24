@@ -98,3 +98,11 @@ void main(void) {
   gl_FragColor = vec4(mandelbrot_color(pos), 1.0);
 }
 ```
+
+Or using the library, you would write:
+```
+(setv mandelbrot `(setv z (+ (vec2 (- (* z.x z.x) (* z.y z.y))
+                                   (* 2.0 z.x z.y))
+                             c)))
+(print (hy2glsl (fragment-plane (color-ifs mandelbrot))))
+```

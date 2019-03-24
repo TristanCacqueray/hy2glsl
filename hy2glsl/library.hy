@@ -64,3 +64,21 @@
      ~@color-code
      (defn main []
        ~@main-code)))
+
+(defn color-ifs [ifs-code &optional
+                 [max-iter 42]
+                 [escape 1e3]]
+  (when (not (instance? HyExpression (get ifs-code 0)))
+    (setv ifs-code (HyExpression [ifs-code])))
+  (setv max-iter (float max-iter))
+  `(
+     (defn color [coord]
+       (setv idx 0.0)
+       (setv z (vec2 0.0))
+       (setv c coord)
+       (while (< idx ~max-iter)
+         ~@ifs-code
+         (if (> (dot z z) ~escape)
+             (break))
+         (setv idx (+ idx 1.0)))
+       (vec3 (* 1.0 (/ idx ~max-iter))))))
