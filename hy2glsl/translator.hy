@@ -177,6 +177,13 @@
               (define (mangle (get expr 2)) (get expr 1))
               (append "uniform " (get expr 1)
                       " " (mangle (get expr 2)) ";\n")]
+             [(= operator 'attribute)
+              #_(comment
+                  Syntax: (attribute type name)
+                  )
+              (define (mangle (get expr 2)) (get expr 1))
+              (append "attribute " (get expr 1)
+                      " " (mangle (get expr 2)) ";\n")]
 
              ;; Control flow
              [(= operator 'if)
@@ -275,6 +282,9 @@
            (append expr)]
 
           [True (print "error: unknown symbol:" expr)]))
+  ;; Shift shader symbol
+  (when (= (get code 0) 'shader)
+    (setv code (cut code 1)))
   ;; Infer function argument type in reverse order
   (setv reverse (HyExpression) func-pos 0)
   (for [expr code]
@@ -284,6 +294,11 @@
           [True
            (.insert reverse func-pos expr)
            (setv func-pos (inc func-pos))]))
-  (translate reverse {"no-code-gen" True "infer-function-type" True})
-  (translate code {"gl_FragCoord" "vec2" "gl_FragColor" "vec4"})
+  (setv default-env {"gl_FragCoord" "vec2"
+                     "gl_Position" "vec4"
+                     "gl_FragColor" "vec4"})
+  (setv first-pass-env (.copy default-env))
+  (.update first-pass-env {"no-code-gen" True "infer-function-type" True})
+  (translate reverse first-pass-env)
+  (translate code default-env)
   (.join "" shader))

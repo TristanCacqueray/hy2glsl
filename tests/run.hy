@@ -1,6 +1,6 @@
 #!/bin/env hy
 
-(import [hy2glsl [hy2glsl]])
+(import [hy2glsl [hy2glsl library]])
 
 (for [[test hy-input expected-glsl-output]
       [["Pragma, extension and globals"
@@ -88,6 +88,15 @@ void main(void) {
   vec2 uv = vec2(0.0);
   vec2 color = colorize(uv);
   color = post_process(uv + color, 4.0);
+}
+]]]
+       ["Library: vertex-fullscreen"
+       (library.vertex-fullscreen)
+       #[[
+attribute vec2 position;
+
+void main(void) {
+  gl_Position = vec4(position, 0.0, 1.0);
 }
 ]]]]]
   (setv result (hy2glsl hy-input))
