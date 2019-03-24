@@ -231,27 +231,40 @@
 
              ;; Arithmetic
              [(= operator '+)
+              (append "(")
               (translate (get expr 1) env :term False)
               (for [operand (cut expr 2)]
                 (append " + ")
-                (translate operand env :term False))]
+                (translate operand env :term False))
+              (append ")")]
              [(= operator '-)
-              (when (= (len expr) 2)
-                (append "-"))
+              (if (= (len expr) 2)
+                  (append "-")
+                  (append "("))
               (translate (get expr 1) env :term False)
               (for [operand (cut expr 2)]
                 (append " - ")
-                (translate operand env :term False))]
+                (translate operand env :term False))
+              (when (not (= (len expr) 2))
+                (append ")"))]
              [(= operator '*)
+              (append "(")
               (translate (get expr 1) env :term False)
               (for [operand (cut expr 2)]
                 (append " * ")
-                (translate operand env :term False))]
+                (translate operand env :term False))
+              (append ")")]
              [(= operator '/)
+              (append "(")
               (translate (get expr 1) env :term False)
               (for [operand (cut expr 2)]
                 (append " / ")
-                (translate operand env :term False))]
+                (translate operand env :term False))
+              (append ")")]
+
+             ;; Member access
+             [(and (symbol? operator) (= (get operator 0) '.))
+              (append (get expr 1) operator)]
 
              ;; Function call
              [(symbol? operator)

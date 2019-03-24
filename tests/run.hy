@@ -41,7 +41,7 @@ vec4 test(void) {
           (setv local-var 43))
         #[[
 vec4 color = vec4(0.0);
-color = color + 0.5;
+color = (color + 0.5);
 
 void proc(void) {
   int local_var = 42;
@@ -60,7 +60,7 @@ int local_var = 43;
        #[[
 
 vec2 double_vec(vec2 uv) {
-  return uv + uv;
+  return (uv + uv);
 }
 vec2 var = double_vec(vec2(1.0));
 ]]]
@@ -77,7 +77,7 @@ vec2 var = double_vec(vec2(1.0));
        #[[
 
 vec2 colorize(vec2 uv) {
-  return uv * 1;
+  return (uv * 1);
 }
 
 vec2 post_process(vec2 color, float factor) {
@@ -87,7 +87,7 @@ vec2 post_process(vec2 color, float factor) {
 void main(void) {
   vec2 uv = vec2(0.0);
   vec2 color = colorize(uv);
-  color = post_process(uv + color, 4.0);
+  color = post_process((uv + color), 4.0);
 }
 ]]]
        ["Library: vertex-fullscreen"
