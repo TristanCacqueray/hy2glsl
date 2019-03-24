@@ -30,40 +30,37 @@
   (setv color-func-name
         (get (get (list (filter (fn [x] (= (get x 0) 'defn)) color-code)) 0) 1))
 
-  (setv main-code
-        (if (= super-sampling 1)
-            `(
-              (setv uv (- (* (/ gl_FragCoord.xy (.xy ~res-name)) 2.) 1.0))
-              (setv uv.y (* uv.y (- (/ (.y ~res-name) (.x ~res-name)))))
-              (setv pos (+ ~center-name (* uv ~range-name)))
-              (setv gl_FragColor (vec4 (~color-func-name pos) 1.0)))
-            `(
-              (setv col (vec3 0.0))
-              (setv m 0)
-              (while (< m ~super-sampling)
-                (setv n 0)
-                (while (< n ~super-sampling)
-                  (setv uv
-                        (- (* (/ (+ gl_FragCoord.xy
-                                    (- (/ (vec2 (float m) (float n))
-                                          (float ~super-sampling))
-                                       0.5))
-                                 (.xy ~res-name)) 2.) 1.0))
-                  (setv uv.y (* uv.y (- (/ (.y ~res-name) (.x ~res-name)))))
-                  (setv pos (+ ~center-name (* uv ~range-name)))
-                  (setv col (+ col (~color-func-name pos)))
-                  (setv n (+ n 1)))
-                (setv m (+ m 1)))
-              (setv col (/ col (float (* ~super-sampling ~super-sampling))))
-              (setv gl_FragColor (vec4 col 1.0)))))
-
   `(shader
      (uniform vec2 ~res-name)
      (uniform vec2 ~center-name)
      (uniform float ~range-name)
      ~@color-code
      (defn main []
-       ~@main-code)))
+       ~@(if (= super-sampling 1)
+            `(
+              (setv uv (- (* (/ gl_FragCoord.xy (.xy ~res-name)) 2.) 1.0))
+              (setv uv.y (* uv.y (- (/ (.y ~res-name) (.x ~res-name)))))
+              (setv pos (+ ~center-name (* uv ~range-name)))
+              (setv col (~color-func-name pos)))
+             `(
+               (setv col (vec3 0.0))
+               (setv m 0)
+               (while (< m ~super-sampling)
+                 (setv n 0)
+                 (while (< n ~super-sampling)
+                   (setv uv
+                         (- (* (/ (+ gl_FragCoord.xy
+                                     (- (/ (vec2 (float m) (float n))
+                                           (float ~super-sampling))
+                                        0.5))
+                                  (.xy ~res-name)) 2.) 1.0))
+                   (setv uv.y (* uv.y (- (/ (.y ~res-name) (.x ~res-name)))))
+                   (setv pos (+ ~center-name (* uv ~range-name)))
+                   (setv col (+ col (~color-func-name pos)))
+                   (setv n (+ n 1)))
+                 (setv m (+ m 1)))
+               (setv col (/ col (float (* ~super-sampling ~super-sampling))))))
+       (setv gl_FragColor (vec4 col 1.0)))))
 
 (defn color-ifs [ifs-code &optional
                  [max-iter 42]
