@@ -9,9 +9,35 @@ inspired by the [varjo translator](https://github.com/cbaggers/varjo).
 Uniform, varying and outputs need to be typed. It may be possible to infer
 the type by knowing the associated CPU (e.g. numpy) object type.
 
-Function arguments also need to be typed. It may be possible to infer
-the type by walking the hy code. Until then, the Hy syntax for function
-argument is slightly modified to set type through keywords.
+For function signature and variables, the types are inferred using this
+process:
+
+- Variable definition types are inferred from the value expression:
+  - look for known constructor like vec2()
+  - look for known variable type already inferred
+  - look for known symbol type like float? or integer?
+- Function argument types are inferred using a reverse order first pass
+- Function return types are inferred from the last expression of the body.
+
+This type inferrence process works for such shader:
+
+```
+(setv var (vec2 0.0))
+(defn nested-func [arg] ...)
+(defn func [a b] (nested-func (+ a b)))
+(defn main [] (func var 2))
+```
+
+But it will fail when function argument are solely defined by return type:
+
+```
+(defn func [] (return 42))
+(defn other-func [a] a)
+(defn main [] (other-func (func)))
+```
+
+Fortunately, shader usualy mutate return value before using them as an
+function argument, therefor that primitive process works in most cases.
 
 
 ## Example:
@@ -24,7 +50,7 @@ A mandelbrot fragment shader in Hy:
   (uniform vec2 iResolution)
   (uniform vec2 center)
   (uniform float range)
-  (defn mandelbrot-color [[coord :vec2]]
+  (defn mandelbrot-color [coord]
     (setv idx 0.0)
     (setv z (vec2 0.0))
     (setv c coord)

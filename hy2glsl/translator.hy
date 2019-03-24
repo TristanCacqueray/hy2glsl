@@ -23,6 +23,7 @@
 
 (defn hy2glsl [code]
   (setv shader [])
+  (setv function-arguments-types {})
   (defn translate [expr env &optional [indent 0] [term True]]
     (defn append [&rest code &kwargs kwargs]
       (unless (in "no-code-gen" env)
@@ -89,14 +90,16 @@
              ;; Hy Functions/variables to glsl
              [(= operator 'defn)
               #_(comment
-                  Syntax: (defn name [[arg :type] ...] (code))
+                  Syntax: (defn name [arg ...] (code))
                   )
+              (when (len (get expr 2))
+                (setv arg-types (get function-arguments-types (get expr 1))))
               (setv new-env (copy-env))
               ;; Add argument to environment
               (for [arg (get expr 2)]
-                (if (lookup (get arg 0))
-                    (print "warning: shadow var:" (get arg 0))
-                    (assoc new-env (get arg 0) (name (get arg 1)))))
+                (if (lookup arg new-env)
+                    (print "warning: shadow var:" arg))
+                (assoc new-env arg (get arg-types (.index (get expr 2) arg))))
 
               (defn inject-return []
                 (setv (get expr -1) (quasiquote
@@ -109,7 +112,7 @@
                      (setv return-type "void")]
                     [(not (= (get (last expr) 0) 'return))
                      (inject-return)])
-              (unless return-type
+              (unless (or (in "infer-function-type" env) return-type)
                 ;; Do a first pass on function body to discover the type of
                 ;; the last expression
                 (setv tmp-env (copy-env new-env))
@@ -123,8 +126,10 @@
               (append return-type " " (mangle (get expr 1)) "("
                       (if (len (get expr 2))
                           (.join ", " (map (fn [arg]
-                                             (+ (name (get arg 1))
-                                                " " (get arg 0)))
+                                             (+ (get
+                                                  arg-types
+                                                  (.index (get expr 2) arg))
+                                                " " arg))
                                            (get expr 2)))
                           "void")
                       ") {\n")
@@ -243,6 +248,13 @@
 
              ;; Function call
              [(symbol? operator)
+              ;; TODO: check for unknown function
+              (when (in "infer-function-type" env)
+                (assoc function-arguments-types operator [])
+                (for [operand (cut expr 1)]
+                  (.append
+                    (get function-arguments-types operator)
+                    (infer-type operand))))
               (append (mangle operator) "(")
               (when (> (len expr) 1)
                 (translate (get expr 1) env :term False))
@@ -263,5 +275,15 @@
            (append expr)]
 
           [True (print "error: unknown symbol:" expr)]))
-  (translate code {"gl_FragCoord" "vec2" "gl_FragColor" "vec4"} 0)
+  ;; Infer function argument type in reverse order
+  (setv reverse (HyExpression) func-pos 0)
+  (for [expr code]
+    ;; Keep global at the top, function at the bottom in reverse order
+    (setv operator (get expr 0))
+    (cond [(= operator 'defn) (.insert reverse func-pos expr)]
+          [True
+           (.insert reverse func-pos expr)
+           (setv func-pos (inc func-pos))]))
+  (translate reverse {"no-code-gen" True "infer-function-type" True})
+  (translate code {"gl_FragCoord" "vec2" "gl_FragColor" "vec4"})
   (.join "" shader))

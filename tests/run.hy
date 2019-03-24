@@ -54,7 +54,7 @@ int local_var = 43;
 ]]]
        ["Function signature inference"
        '(
-         (defn double-vec [[uv :vec2]]
+         (defn double-vec [uv]
            (+ uv uv))
          (setv var (double-vec (vec2 1.0))))
        #[[
@@ -63,6 +63,32 @@ vec2 double_vec(vec2 uv) {
   return uv + uv;
 }
 vec2 var = double_vec(vec2(1.0));
+]]]
+       ["Function return type inference"
+       '(
+         (defn colorize [uv]
+           (* uv 1))
+         (defn post-process [color factor]
+           (pow color factor))
+         (defn main []
+           (setv uv (vec2 0.0))
+           (setv color (colorize uv))
+           (setv color (post-process (+ uv color) 4.0))))
+       #[[
+
+vec2 colorize(vec2 uv) {
+  return uv * 1;
+}
+
+vec2 post_process(vec2 color, float factor) {
+  return pow(color, factor);
+}
+
+void main(void) {
+  vec2 uv = vec2(0.0);
+  vec2 color = colorize(uv);
+  color = post_process(uv + color, 4.0);
+}
 ]]]]]
   (setv result (hy2glsl hy-input))
   (if (= result expected-glsl-output)
