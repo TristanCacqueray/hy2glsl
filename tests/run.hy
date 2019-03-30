@@ -53,6 +53,16 @@ void proc(void) {
 }
 int local_var = 43;
 ]]]
+       ["Variable type accessor"
+        '(shader
+           (setv color (vec4 0))
+           (setv r color.x)
+           (setv color.x 42.0))
+        #[[
+vec4 color = vec4(0);
+float r = color.x;
+color.x = 42.0;
+]]]
        ["if else form"
         '(do
           (setv color (vec4 0.))

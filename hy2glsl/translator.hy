@@ -90,7 +90,10 @@
               [(and (not no-symbol) (none? expr))
                'void]
               [(and (symbol? expr) (lookup expr env))
-               (lookup expr env)]
+               ;; TODO: support different accessor type
+               (if (or (.endswith expr '.x) (.endswith expr '.y))
+                   'float
+                   (lookup expr env))]
               [True None]))
       (setv inferred-type (infer expr))
       (when (not inferred-type)
