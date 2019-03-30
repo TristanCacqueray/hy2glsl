@@ -9,6 +9,9 @@ inspired by the [varjo translator](https://github.com/cbaggers/varjo).
 Uniform, varying and outputs need to be typed. It may be possible to infer
 the type by knowing the associated CPU (e.g. numpy) object type.
 
+Function overloading is not supported as the current implementation maps
+one function signature to one function name.
+
 For function signature and variables, the types are inferred using this
 process:
 
@@ -28,7 +31,7 @@ This type inferrence process works for such shader:
 (defn main [] (func var 2))
 ```
 
-But it will fail when function argument are solely defined by return type:
+But it will fail when function arguments are solely defined by return type:
 
 ```
 (defn func [] (return 42))
@@ -101,9 +104,7 @@ void main(void) {
 
 Or using the library, you would write:
 ```
-(setv mandelbrot `(setv z (+ (vec2 (- (* z.x z.x) (* z.y z.y))
-                                   (* 2.0 z.x z.y))
-                             c)))
+(setv mandelbrot `(setv z (+ (cSquare z) c)))
 (print (hy2glsl (fragment-plane (color-ifs mandelbrot))))
 ```
 

@@ -54,10 +54,10 @@ void proc(void) {
 int local_var = 43;
 ]]]
        ["Function signature inference"
-       '(shader
-         (defn double-vec [uv]
-           (+ uv uv))
-         (setv var (double-vec (vec2 1.0))))
+        '(shader
+           (defn double-vec [uv]
+             (+ uv uv))
+           (setv var (double-vec (vec2 1.0))))
        #[[
 
 vec2 double_vec(vec2 uv) {
@@ -90,6 +90,18 @@ void main(void) {
   vec2 color = colorize(uv);
   color = post_process((uv + color), 4.0);
 }
+]]]
+       ["Built-in: cSquare"
+        '(shader
+           (version 200)
+           (setv z (cSquare (vec2 1.0))))
+        #[[
+#version 200
+
+vec2 cSquare(vec2 c) {
+  return vec2(((c.x * c.x) - (c.y * c.y)), (2.0 * c.x * c.y));
+}
+vec2 z = cSquare(vec2(1.0));
 ]]]
        ["Library: vertex-dumb"
        (library.vertex-dumb)

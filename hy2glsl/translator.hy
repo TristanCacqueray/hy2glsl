@@ -19,11 +19,22 @@
 (defn list? [l]
   (instance? HyList l))
 
-(setv gl-types '[int float vec2 vec3 vec4 mat2 mat3 mat4])
+(setv gl-types '[int float vec2 vec3 vec4 mat2 mat3 mat4]
+      builtins
+      '(shader
+         (defn cSquare [c]
+           (vec2 (- (* c.x c.x) (* c.y c.y))
+                 (* 2.0 c.x c.y)))
+         ))
+(defn builtin? [name]
+  (for [builtin (cut builtins 1)]
+    (if (= (get builtin 1) name)
+        (return builtin))))
 
 (defn hy2glsl [code]
-  (setv shader [])
-  (setv function-arguments-types {})
+  (setv shader []
+        function-arguments-types {}
+        used-builtins {})
   (defn translate [expr env &optional [indent 0] [term True]]
     (defn append [&rest code &kwargs kwargs]
       (unless (in "no-code-gen" env)
@@ -86,6 +97,15 @@
 
     (cond [(expression? expr)
            (setv operator (get expr 0))
+           (when (and used-builtins
+                      (not (expression? operator))
+                      (not (in operator '(shader do version uniform attribute)))
+                      (not (in "no-code-gen" env)))
+             ;; Inject any used-builtin
+             (setv builtins (list (.values used-builtins)))
+             (.clear used-builtins)
+             (for [e builtins]
+               (translate e env)))
            (cond
              ;; Hy Functions/variables to glsl
              [(= operator 'defn)
@@ -271,7 +291,10 @@
                 (for [operand (cut expr 1)]
                   (.append
                     (get function-arguments-types operator)
-                    (infer-type operand))))
+                    (infer-type operand)))
+                (setv builtin (builtin? operator))
+                (when (and builtin (not (in operator used-builtins)))
+                  (assoc used-builtins operator builtin)))
               (append (mangle operator) "(")
               (when (> (len expr) 1)
                 (translate (get expr 1) env :term False))

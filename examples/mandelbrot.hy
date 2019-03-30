@@ -16,9 +16,7 @@
 (import hy2glsl.library)
 (import [hy2glsl.library [*]])
 
-(setv mandelbrot `(setv z (+ (vec2 (- (* z.x z.x) (* z.y z.y))
-                                   (* 2.0 z.x z.y))
-                             c))
+(setv mandelbrot `(setv z (+ (cSquare z) c))
       vertex (vertex-dumb)
       attributes vertex-dumb-attributes
       fragment (fragment-plane (color-ifs mandelbrot))
