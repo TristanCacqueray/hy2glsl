@@ -263,6 +263,14 @@
               (translate (get expr 1) env :term False)
               (append " > ")
               (translate (get expr 2) env :term False)]
+             [(= operator '<=)
+              (translate (get expr 1) env :term False)
+              (append " <= ")
+              (translate (get expr 2) env :term False)]
+             [(= operator '>=)
+              (translate (get expr 1) env :term False)
+              (append " >= ")
+              (translate (get expr 2) env :term False)]
 
              ;; Arithmetic
              [(= operator '+)
