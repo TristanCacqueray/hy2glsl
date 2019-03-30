@@ -21,6 +21,8 @@
                       (setv z (+ (cSquare z) c)))
       vertex (vertex-dumb)
       attributes vertex-dumb-attributes
-      fragment (fragment-plane (color-ifs burning-ship :pre-iter 1) :super-sampling 2)
-      uniforms {"range" 0.05
-                "center" [-1.63 -0.03]})
+      fragment (fragment-plane (color-ifs burning-ship
+                                          :pre-iter 15
+                                          :max-iter 33) :super-sampling 2)
+      uniforms {"range" 0.07
+                "center" [-1.75 -0.03]})

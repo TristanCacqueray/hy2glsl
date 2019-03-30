@@ -218,20 +218,21 @@ vec3 color(vec2 coord) {
   float idx = 0.0;
   vec2 z = vec2(0.0);
   vec2 c = coord;
+  float ci = 0.0;
   while (idx < 42.0) {
     z = ((z * z) + c);
-    if (dot(z, z) > 1000.0) {
+    if (dot(z, z) > 100.0) {
       break;
     }
     idx = (idx + 1.0);
   }
-  if (idx < 42) {
-    float co = ((idx + 1.0) - log2((0.5 * log2(dot(z, z)))));
-    co = sqrt((co / 256.0));
-    return vec3((0.5 + (0.5 * cos(((6.2831 * co) + 0)))), (0.5 + (0.5 * cos(((6.2831 * co) + 0.4)))), (0.5 + (0.5 * cos(((6.2831 * co) + 0.7)))));
+  if (idx < 42.0) {
+    ci = ((idx + 1.0) - log2((0.5 * log2(dot(z, z)))));
+    ci = sqrt((ci / 256.0));
   } else {
     return vec3(0.0);
   }
+  return vec3((0.5 + (0.5 * cos(((6.2831 * ci) + 0)))), (0.5 + (0.5 * cos(((6.2831 * ci) + 0.4)))), (0.5 + (0.5 * cos(((6.2831 * ci) + 0.7)))));
 }
 
 vec3 main(void) {

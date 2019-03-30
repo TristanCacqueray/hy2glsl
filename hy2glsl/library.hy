@@ -72,34 +72,59 @@
 (defn color-ifs [ifs-code &optional
                  [color-type 'iq-shadertoy]
                  [color [0 0.4 0.7]]
+                 [color-factor 1.0]
+                 [color-ratio 1.64706]
                  [pre-iter 0]
                  [max-iter 42]
-                 [escape 1e3]]
+                 [escape 2]]
   (when (not (instance? HyExpression (get ifs-code 0)))
     (setv ifs-code (HyExpression [ifs-code])))
-  (if (= color-type 'iq-shadertoy)
-      ;; Color scheme from Inigo Quilez's Shader Toy
-      (setv
-        color-code
-        `(if (< idx ~max-iter)
-             (do
-               (setv co (- (+ idx 1.0) (log2 (* 0.5 (log2 (dot z z))))))
-               (setv co (sqrt (/ co 256.0)))
-               (return (vec3
-                         (+ 0.5 (* 0.5 (cos (+ (* 6.2831 co) ~(r color)))))
-                         (+ 0.5 (* 0.5 (cos (+ (* 6.2831 co) ~(g color)))))
-                         (+ 0.5 (* 0.5 (cos (+ (* 6.2831 co) ~(b color))))))))
-             (return (vec3 0.0)))))
+  (setv color-code None color-code-post None)
   (setv max-iter (float max-iter)
-        pre-iter (float pre-iter))
+        pre-iter (float pre-iter)
+        escape (** 10.0 escape)
+        color-factor (float color-factor)
+        color-ratio (float color-ratio))
+  (cond [(= color-type 'iq-shadertoy)
+         ;; Color scheme from Inigo Quilez's Shader Toy
+         (setv
+           color-code-post
+           `(if (< idx ~max-iter)
+                (do
+                  (setv ci (- (+ idx 1.0) (log2 (* 0.5 (log2 (dot z z))))))
+                  (setv ci (sqrt (/ ci 256.0))))
+                (return (vec3 0.0))))]
+        [(= color-type 'mean-mix-distance)
+         (setv
+           color-code
+           `(if (> idx ~pre-iter)
+                (setv ci (mix ci (length z) ~color-factor)))
+           color-code-post
+           `(setv ci (- 1.0 (log2 (* 0.5 (log2 (/ ci ~color-ratio)))))))]
+        [(= color-type 'mean-distance)
+         (setv
+           color-code
+           `(if (> idx ~pre-iter)
+                (setv ci (+ ci (length z))))
+           color-code-post
+           `(do
+              (setv ci (/ ci (- idx ~pre-iter)))
+              (setv ci (- 1.0 (log2 (* 0.5 (log2 (/ ci ~color-ratio))))))))]
+        [True (print "Unknown color-type" color-type)])
   `(shader
      (defn color [coord]
        (setv idx 0.0)
        (setv z (vec2 0.0))
        (setv c coord)
+       (setv ci 0.0)
        (while (< idx ~max-iter)
-         ~@ifs-code
+         ~ifs-code
+         ~color-code
          (if (and ~(if (> pre-iter 0) `(> idx ~pre-iter)) (> (dot z z) ~escape))
              (break))
          (setv idx (+ idx 1.0)))
-       ~color-code)))
+       ~color-code-post
+       (return (vec3
+                 (+ 0.5 (* 0.5 (cos (+ (* 6.2831 ci) ~(r color)))))
+                 (+ 0.5 (* 0.5 (cos (+ (* 6.2831 ci) ~(g color)))))
+                 (+ 0.5 (* 0.5 (cos (+ (* 6.2831 ci) ~(b color))))))))))
