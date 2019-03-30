@@ -211,8 +211,13 @@
               (translate (get expr 1) env :term False)
               (append ") {\n" :indent 0)
               (setv new-env (copy-env))
-              (translate (cut expr 2) new-env (inc indent))
-              (append "}\n")]
+              (translate (get expr 2) new-env (inc indent))
+              (append "}")
+              (when (> (len expr) 3)
+                (append " else {\n" :indent 0)
+                (translate (get expr 3) new-env (inc indent))
+                (append "}"))
+              (append "\n" :indent 0)]
              [(= operator 'while)
               (append "while (")
               (translate (get expr 1) env :term False)

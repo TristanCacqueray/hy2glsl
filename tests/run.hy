@@ -53,6 +53,20 @@ void proc(void) {
 }
 int local_var = 43;
 ]]]
+       ["if else form"
+        '(do
+          (setv color (vec4 0.))
+          (if True
+              (setv color (vec4 1.0))
+              (setv color (vec4 0.0))))
+        #[[
+vec4 color = vec4(0.0);
+if (true) {
+  color = vec4(1.0);
+} else {
+  color = vec4(0.0);
+}
+]]]
        ["Function signature inference"
         '(shader
            (defn double-vec [uv]
