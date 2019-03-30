@@ -127,6 +127,24 @@ vec2 cSquare(vec2 c) {
 }
 vec2 z = cSquare(vec2(1.0));
 ]]]
+       ["Built-in: crDiv"
+        `(shader
+           (setv complex (crDiv 42.0 (vec2 1.0))))
+        #[[
+
+vec2 crDiv(float r, vec2 c) {
+  if (abs(c.x) <= abs(c.y)) {
+    float ratio = (c.x / c.y);
+    float denom = (c.y * (1 + (ratio * ratio)));
+    return vec2(((r * ratio) / denom), -(r / denom));
+  } else {
+    ratio = (c.y / c.x);
+    denom = (c.x * (1 + (ratio * ratio)));
+    return vec2((r / denom), (-(r * ratio) / denom));
+  }
+}
+vec2 complex = crDiv(42.0, vec2(1.0));
+]]]
        ["Library: vertex-dumb"
        (library.vertex-dumb)
        #[[

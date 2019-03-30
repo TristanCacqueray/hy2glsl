@@ -25,6 +25,17 @@
          (defn cSquare [c]
            (vec2 (- (* c.x c.x) (* c.y c.y))
                  (* 2.0 c.x c.y)))
+         (defn crDiv [r c]
+           (if (<= (abs c.x) (abs c.y))
+               (do
+                 (setv ratio (/ c.x c.y))
+                 (setv denom (* c.y (+ 1 (* ratio ratio))))
+                 (return (vec2 (/ (* r ratio) denom)
+                               (- (/ r denom)))))
+               (do
+                 (setv ratio (/ c.y c.x))
+                 (setv denom (* c.x (+ 1 (* ratio ratio))))
+                 (return (vec2 (/ r denom) (/ (- (* r ratio)) denom))))))
          ))
 (defn builtin? [name]
   (for [builtin (cut builtins 1)]
