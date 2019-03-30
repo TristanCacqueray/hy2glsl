@@ -87,6 +87,8 @@
                'float]
               [(and (not no-symbol) (integer? expr))
                'int]
+              [(and (not no-symbol) (none? expr))
+               'void]
               [(and (symbol? expr) (lookup expr env))
                (lookup expr env)]
               [True None]))
@@ -121,24 +123,27 @@
                     (print "warning: shadow var:" arg))
                 (assoc new-env arg (get arg-types (.index (get expr 2) arg))))
 
-              (defn inject-return []
+              ;; Inject return operator if last expr is not a return
+              (when (or (not (expression? (last expr)))
+                        (not (in (get (last expr) 0) '[if do setv return])))
                 (setv (get expr -1) (quasiquote
                                       (return (unquote (last expr))))))
-              ;; Test if last instruction is a return statement
-              (setv return-type None)
-              (cond [(not (expression? (last expr)))
-                     (inject-return)]
-                    [(in (get (last expr) 0) '[if do setv])
-                     (setv return-type "void")]
-                    [(not (= (get (last expr) 0) 'return))
-                     (inject-return)])
-              (unless (or (in "infer-function-type" env) return-type)
+              (setv return-type "void")
+              (unless (in "infer-function-type" env)
                 ;; Do a first pass on function body to discover the type of
                 ;; the last expression
                 (setv tmp-env (copy-env new-env))
                 (assoc tmp-env "no-code-gen" True)
                 (translate (cut expr 3) tmp-env)
-                (setv return-type (infer-type (last expr) tmp-env))
+                (defn get-return [expr]
+                  (when (expression? expr)
+                    (if (= (get expr 0) 'return)
+                        (return (get expr 1))
+                        (for [e expr]
+                          (setv ret (get-return e))
+                          (if ret (return ret)))))
+                  None)
+                (setv return-type (infer-type (get-return expr) tmp-env))
                 ;; Add function name to parent environment type
                 (define (get expr 1) return-type))
 
