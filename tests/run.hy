@@ -191,7 +191,13 @@ vec3 color(vec2 coord) {
     }
     idx = (idx + 1.0);
   }
-  return vec3((1.0 * (idx / 42.0)));
+  if (idx < 42) {
+    float co = ((idx + 1.0) - log2((0.5 * log2(dot(z, z)))));
+    co = sqrt((co / 256.0));
+    return vec3((0.5 + (0.5 * cos(((6.2831 * co) + 0)))), (0.5 + (0.5 * cos(((6.2831 * co) + 0.4)))), (0.5 + (0.5 * cos(((6.2831 * co) + 0.7)))));
+  } else {
+    return vec3(0.0);
+  }
 }
 
 vec3 main(void) {

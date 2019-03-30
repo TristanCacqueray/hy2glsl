@@ -65,11 +65,30 @@
                (setv col (/ col (float (* ~super-sampling ~super-sampling))))))
        (setv gl_FragColor (vec4 col 1.0)))))
 
+(defn r [color] (get color 0))
+(defn g [color] (get color 1))
+(defn b [color] (get color 2))
+
 (defn color-ifs [ifs-code &optional
+                 [color-type 'iq-shadertoy]
+                 [color [0 0.4 0.7]]
                  [max-iter 42]
                  [escape 1e3]]
   (when (not (instance? HyExpression (get ifs-code 0)))
     (setv ifs-code (HyExpression [ifs-code])))
+  (if (= color-type 'iq-shadertoy)
+      ;; Color scheme from Inigo Quilez's Shader Toy
+      (setv
+        color-code
+        `(if (< idx ~max-iter)
+             (do
+               (setv co (- (+ idx 1.0) (log2 (* 0.5 (log2 (dot z z))))))
+               (setv co (sqrt (/ co 256.0)))
+               (return (vec3
+                         (+ 0.5 (* 0.5 (cos (+ (* 6.2831 co) ~(r color)))))
+                         (+ 0.5 (* 0.5 (cos (+ (* 6.2831 co) ~(g color)))))
+                         (+ 0.5 (* 0.5 (cos (+ (* 6.2831 co) ~(b color))))))))
+             (return (vec3 0.0)))))
   (setv max-iter (float max-iter))
   `(shader
      (defn color [coord]
@@ -81,4 +100,4 @@
          (if (> (dot z z) ~escape)
              (break))
          (setv idx (+ idx 1.0)))
-       (vec3 (* 1.0 (/ idx ~max-iter))))))
+       ~color-code)))
