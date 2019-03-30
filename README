@@ -45,7 +45,7 @@ function argument, therefor that primitive process works in most cases.
 A mandelbrot fragment shader in Hy:
 ```
 (setv MAX_ITER 42.0)
-(print (hy2glsl `(
+(print (hy2glsl `(shader
   (version 350)
   (uniform vec2 iResolution)
   (uniform vec2 center)

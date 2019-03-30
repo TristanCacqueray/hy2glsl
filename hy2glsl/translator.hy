@@ -201,10 +201,7 @@
               (translate (cut expr 2) new-env (inc indent))
               (append "}\n")]
              [(= operator 'do)
-              (append "{\n")
-              (setv new-env (copy-env))
-              (translate (cut expr 1) new-env (inc indent))
-              (append "}\n")]
+              (translate (cut expr 1) env indent)]
              [(= operator 'return)
               (append "return ")
               (translate (get expr 1) env :term False)
@@ -291,8 +288,12 @@
 
              [True (print "error: unknown expresion:" expr)])]
 
+          ;; Symbols
           [(or (symbol? expr) (numeric? expr))
-           (append expr)]
+           (cond
+             [(in expr '[True False])
+              (append (if (= expr 'True) 'true 'false))]
+             [True (append expr)])]
 
           [True (print "error: unknown symbol:" expr)]))
   ;; Shift shader symbol

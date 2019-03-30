@@ -27,6 +27,8 @@
   (when (not (instance? HyExpression (get color-code 0)))
     (setv color-code (HyExpression [color-code])))
   ;; Get last function name
+  (if (in (get (get color-code 0) 0) ['shader 'do])
+      (setv color-code (cut (get color-code 0) 1)))
   (setv color-func-name
         (get (get (list (filter (fn [x] (= (get x 0) 'defn)) color-code)) 0) 1))
 
@@ -37,12 +39,12 @@
      ~@color-code
      (defn main []
        ~@(if (= super-sampling 1)
-            `(
+            `(do
               (setv uv (- (* (/ gl_FragCoord.xy (.xy ~res-name)) 2.) 1.0))
               (setv uv.y (* uv.y (- (/ (.y ~res-name) (.x ~res-name)))))
               (setv pos (+ ~center-name (* uv ~range-name)))
               (setv col (~color-func-name pos)))
-             `(
+             `(do
                (setv col (vec3 0.0))
                (setv m 0)
                (while (< m ~super-sampling)
@@ -68,7 +70,7 @@
   (when (not (instance? HyExpression (get ifs-code 0)))
     (setv ifs-code (HyExpression [ifs-code])))
   (setv max-iter (float max-iter))
-  `(
+  `(shader
      (defn color [coord]
        (setv idx 0.0)
        (setv z (vec2 0.0))
