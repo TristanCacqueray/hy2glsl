@@ -20,6 +20,7 @@
   (instance? HyList l))
 
 (setv gl-types '[int float vec2 vec3 vec4 mat2 mat3 mat4]
+      gl-proc {'dot 'float}
       builtins
       '(shader
          (defn cSquare [c]
@@ -82,6 +83,8 @@
       (defn infer [expr &optional [no-symbol False]]
         (cond [(and (expression? expr) (in (get expr 0) gl-types))
                (get expr 0)]
+              [(and (expression? expr) (in (get expr 0) gl-proc))
+               (get gl-proc (get expr 0))]
               [(expression? expr)
                ;; First look for any known variables type
                (for [e expr]
