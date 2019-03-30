@@ -31,7 +31,8 @@
   (if (in (get (get color-code 0) 0) ['shader 'do])
       (setv color-code (cut (get color-code 0) 1)))
   (setv color-func-name
-        (get (get (list (filter (fn [x] (= (get x 0) 'defn)) color-code)) 0) 1))
+        (get (get (list (filter (fn [x] (and x (= (get x 0) 'defn)))
+                                color-code)) 0) 1))
 
   `(shader
      (uniform vec2 ~res-name)
@@ -70,6 +71,8 @@
 (defn b [color] (get color 2))
 
 (defn color-ifs [ifs-code &optional
+                 [julia False]
+                 [seed [0.5 0.07]]
                  [color-type 'iq-shadertoy]
                  [color [0 0.4 0.7]]
                  [color-factor 1.0]
@@ -112,10 +115,11 @@
               (setv ci (- 1.0 (log2 (* 0.5 (log2 (/ ci ~color-ratio))))))))]
         [True (print "Unknown color-type" color-type)])
   `(shader
+     ~(if julia '(uniform vec2 seed))
      (defn color [coord]
        (setv idx 0.0)
-       (setv z (vec2 0.0))
-       (setv c coord)
+       (setv z ~(if julia 'coord '(vec2 0.0)))
+       (setv c ~(if julia 'seed 'coord))
        (setv ci 0.0)
        (while (< idx ~max-iter)
          ~ifs-code
