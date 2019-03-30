@@ -245,6 +245,11 @@
               (for [operand (cut expr 2)]
                 (append " || ")
                 (translate operand env :term False))]
+             [(= operator 'and)
+              (translate (get expr 1) env :term False)
+              (for [operand (cut expr 2)]
+                (append " && ")
+                (translate operand env :term False))]
 
              ;; Logic
              [(= operator '<)
@@ -332,6 +337,17 @@
   ;; Shift shader symbol
   (when (= (get code 0) 'shader)
     (setv code (cut code 1)))
+  ;; Trim None from macro expension
+  (defn trim-none [code]
+    (setv result (HyExpression))
+    (for [expr code]
+      (when (= expr None)
+        (continue))
+      (.append result (if (expression? expr)
+                          (trim-none expr)
+                          expr)))
+    result)
+  (setv code (trim-none code))
   ;; Infer function argument type in reverse order
   (setv reverse (HyExpression) func-pos 0)
   (for [expr code]

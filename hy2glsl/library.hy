@@ -72,6 +72,7 @@
 (defn color-ifs [ifs-code &optional
                  [color-type 'iq-shadertoy]
                  [color [0 0.4 0.7]]
+                 [pre-iter 0]
                  [max-iter 42]
                  [escape 1e3]]
   (when (not (instance? HyExpression (get ifs-code 0)))
@@ -89,7 +90,8 @@
                          (+ 0.5 (* 0.5 (cos (+ (* 6.2831 co) ~(g color)))))
                          (+ 0.5 (* 0.5 (cos (+ (* 6.2831 co) ~(b color))))))))
              (return (vec3 0.0)))))
-  (setv max-iter (float max-iter))
+  (setv max-iter (float max-iter)
+        pre-iter (float pre-iter))
   `(shader
      (defn color [coord]
        (setv idx 0.0)
@@ -97,7 +99,7 @@
        (setv c coord)
        (while (< idx ~max-iter)
          ~@ifs-code
-         (if (> (dot z z) ~escape)
+         (if (and ~(if (> pre-iter 0) `(> idx ~pre-iter)) (> (dot z z) ~escape))
              (break))
          (setv idx (+ idx 1.0)))
        ~color-code)))
