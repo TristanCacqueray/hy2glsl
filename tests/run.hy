@@ -67,14 +67,20 @@ color.x = 42.0;
         '(do
           (setv color (vec4 0.))
           (if True
-              (setv color (vec4 1.0))
-              (setv color (vec4 0.0))))
+              (do
+                (setv color (vec4 1.0))
+                (setv inner-var 42.0))
+              (do
+                (setv color (vec4 0.0))
+                (setv inner-var 42))))
         #[[
 vec4 color = vec4(0.0);
 if (true) {
   color = vec4(1.0);
+  float inner_var = 42.0;
 } else {
   color = vec4(0.0);
+  int inner_var = 42;
 }
 ]]]
        ["Function signature inference"
@@ -138,8 +144,8 @@ vec2 crDiv(float r, vec2 c) {
     float denom = (c.y * (1 + (ratio * ratio)));
     return vec2(((r * ratio) / denom), -(r / denom));
   } else {
-    ratio = (c.y / c.x);
-    denom = (c.x * (1 + (ratio * ratio)));
+    float ratio = (c.y / c.x);
+    float denom = (c.x * (1 + (ratio * ratio)));
     return vec2((r / denom), (-(r * ratio) / denom));
   }
 }

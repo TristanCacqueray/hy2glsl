@@ -230,7 +230,7 @@
               (translate (get expr 1) env :term False)
               (append ") {\n" :indent 0)
               (setv new-env (copy-env))
-              (translate (get expr 2) new-env (inc indent))
+              (translate (get expr 2) (copy-env new-env) (inc indent))
               (append "}")
               (when (> (len expr) 3)
                 (append " else {\n" :indent 0)
