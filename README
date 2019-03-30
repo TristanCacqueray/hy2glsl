@@ -36,7 +36,7 @@ But it will fail when function argument are solely defined by return type:
 (defn main [] (other-func (func)))
 ```
 
-Fortunately, shader usualy mutate return value before using them as an
+Fortunately, shader usualy mutates return value before using them as a
 function argument, therefor that primitive process works in most cases.
 
 
@@ -105,4 +105,17 @@ Or using the library, you would write:
                                    (* 2.0 z.x z.y))
                              c)))
 (print (hy2glsl (fragment-plane (color-ifs mandelbrot))))
+```
+
+
+## Demo
+
+In the example folder there is a loaded based on glumpy to test (and reload)
+shader module:
+
+```
+python setup.py develop --user
+pip install --user glumpy
+pushd example
+./loader.hy mandelbrot.hy
 ```

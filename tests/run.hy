@@ -91,8 +91,8 @@ void main(void) {
   color = post_process((uv + color), 4.0);
 }
 ]]]
-       ["Library: vertex-fullscreen"
-       (library.vertex-fullscreen)
+       ["Library: vertex-dumb"
+       (library.vertex-dumb)
        #[[
 attribute vec2 position;
 

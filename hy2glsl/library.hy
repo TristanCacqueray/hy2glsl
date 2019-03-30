@@ -13,11 +13,12 @@
 ;; You should have received a copy of the GNU Lesser General Public
 ;; License along with this program. If not, see <http://www.gnu.org/licenses/>.
 
-(defn vertex-fullscreen [&optional [attribute-name 'position]]
+(defn vertex-dumb [&optional [attribute-name 'position]]
   `(shader
      (attribute vec2 ~attribute-name)
      (defn main []
        (setv gl_Position (vec4 ~attribute-name 0. 1.)))))
+(setv vertex-dumb-attributes {"position" [[-1 -1] [-1 1] [1 -1] [1 1]]})
 
 (defn fragment-plane [color-code &optional
                       [res-name 'iResolution]
