@@ -1,10 +1,10 @@
 #!/bin/env hy
 
-(import [hy2glsl [hy2glsl library]])
+(import sys [hy2glsl [hy2glsl library]])
 
 (for [[test hy-input expected-glsl-output]
       [["Pragma, extension and globals"
-        '(
+        '(shader
           (version 450)
           (extension GL_NV_gpu_shader_fp64)
           (uniform float iTime))
@@ -19,7 +19,6 @@ uniform float iTime;
          (defn empty-vector [] (vec4 0.0))
          (defn test [] (empty-vector)))
        #[[
-
 vec4 empty_vector(void) {
   return vec4(0.0);
 }
@@ -30,7 +29,7 @@ vec4 test(void) {
 ]]
         ]
        ["Variable type inference"
-        '(
+        '(shader
           (setv color (vec4 0.))
           (setv color (+ color 0.5))
           (defn proc []
@@ -93,7 +92,6 @@ void test_if(void) {
              (+ uv uv))
            (setv var (double-vec (vec2 1.0))))
        #[[
-
 vec2 double_vec(vec2 uv) {
   return (uv + uv);
 }
@@ -110,7 +108,6 @@ vec2 var = double_vec(vec2(1.0));
            (setv color (colorize uv))
            (setv color (post-process (+ uv color) 4.0))))
        #[[
-
 vec2 colorize(vec2 uv) {
   return (uv * 1);
 }
@@ -141,7 +138,6 @@ vec2 z = cSquare(vec2(1.0));
         `(shader
            (setv complex (crDiv 42.0 (vec2 1.0))))
         #[[
-
 vec2 crDiv(float r, vec2 c) {
   if (abs(c.x) <= abs(c.y)) {
     float ratio = (c.x / c.y);
@@ -159,7 +155,6 @@ vec2 complex = crDiv(42.0, vec2(1.0));
         `(shader
            (setv hp (hypot (vec2 1.0))))
         #[[
-
 float hypot(vec2 c) {
   float x = abs(c.x);
   float y = abs(c.y);
@@ -178,7 +173,6 @@ float hp = hypot(vec2(1.0));
         `(shader
            (setv z (cPowr (vec2 1.0) 42.)))
         #[[
-
 float hypot(vec2 c) {
   float x = abs(c.x);
   float y = abs(c.y);
@@ -203,7 +197,6 @@ vec2 z = cPowr(vec2(1.0), 42.0);
         `(shader
            (setv z (cLog (vec2 1.0))))
         #[[
-
 float hypot(vec2 c) {
   float x = abs(c.x);
   float y = abs(c.y);
@@ -284,7 +277,6 @@ void main(void) {
            ~@(library.color-ifs `(setv z (+ (* z z) c)))
            (defn main [] (color (vec2 0.0))))
        #[[
-
 vec3 color(vec2 coord) {
   float idx = 0.0;
   vec2 z = vec2(0.0);
@@ -310,9 +302,11 @@ vec3 main(void) {
   return color(vec2(0.0));
 }
 ]]]]]
-        (setv result (hy2glsl hy-input))
-        (if (= result expected-glsl-output)
-            (print "== OK:" test "==")
-            (do
-              (print "== KO:" test "==")
-              (print result))))
+  (if (and (= (len sys.argv) 2) (not (in (get sys.argv 1) test)))
+      (continue))
+  (setv result (hy2glsl hy-input))
+  (if (= (.strip result) (.strip expected-glsl-output))
+      (print "== OK:" test "==")
+      (do
+        (print "== KO:" test "==")
+        (print result))))
