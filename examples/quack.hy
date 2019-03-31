@@ -28,11 +28,11 @@
                                           :color-ratio 0.01
                                           :pre-iter 0
                                           :max-iter 84)
+                               :invert-xy True
                                :post-process (contrast-saturation-brightness
                                                :brightness 0.9
                                                ;; :gamma 1.8
                                                :contrast 1.)
                                :super-sampling 3)
       uniforms {"range" 10000.0
-                "center" [0.4 0.0]
                 "seed" [-0.3964285714285715 -2.18454190476190493]})

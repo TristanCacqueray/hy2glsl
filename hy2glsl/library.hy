@@ -40,6 +40,7 @@
      (clamp contrast 0.0 1.0)))
 
 (defn fragment-plane [color-code &optional
+                      [invert-xy False]
                       [post-process None]
                       [res-name 'iResolution]
                       [center-name 'center]
@@ -67,6 +68,8 @@
               (setv uv (- (* (/ gl_FragCoord.xy (.xy ~res-name)) 2.) 1.0))
               (setv uv.y (* uv.y (- (/ (.y ~res-name) (.x ~res-name)))))
               (setv pos (+ ~center-name (* uv ~range-name)))
+              ~(when invert-xy
+                '(setv pos (vec2 pos.y pos.x)))
               (setv col (~color-func-name pos)))
              `(do
                (setv m 0)
@@ -81,6 +84,8 @@
                                   (.xy ~res-name)) 2.) 1.0))
                    (setv uv.y (* uv.y (- (/ (.y ~res-name) (.x ~res-name)))))
                    (setv pos (+ ~center-name (* uv ~range-name)))
+                   ~(when invert-xy
+                      '(setv pos (vec2 pos.y pos.x)))
                    (setv col (+ col (~color-func-name pos)))
                    (setv n (+ n 1)))
                  (setv m (+ m 1)))
