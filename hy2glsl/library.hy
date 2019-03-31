@@ -20,7 +20,27 @@
        (setv gl_Position (vec4 ~attribute-name 0. 1.)))))
 (setv vertex-dumb-attributes {"position" [[-1 -1] [-1 1] [1 -1] [1 1]]})
 
+(defn contrast-saturation-brightness [&optional
+                                      [gamma 1.0]
+                                      [exposure 1.0]
+                                      [brightness 0.5]
+                                      [contrast 0.4]]
+  ;; Based on: http://mouaif.wordpress.com/2009/01/22/photoshop-gamma-correction-shader/
+  (setv gamma (float gamma)
+        exposure (float exposure))
+  `(defn post-process [col]
+     ~(unless (= exposure 1.0)
+        `(setv col (* col ~exposure)))
+     ~(unless (= gamma 1.0)
+        `(setv col (pow col (vec3 (/ 1.0 ~gamma)))))
+     (setv brightness (* col ~brightness))
+     (setv intensify (vec3 (dot brightness (vec3 0.2125 0.7154 0.0721))))
+     (setv saturation (mix intensify brightness ~contrast))
+     (setv contrast (mix (vec3 0.5) saturation ~contrast))
+     (clamp contrast 0.0 1.0)))
+
 (defn fragment-plane [color-code &optional
+                      [post-process None]
                       [res-name 'iResolution]
                       [center-name 'center]
                       [range-name 'range]
@@ -33,21 +53,22 @@
   (setv color-func-name
         (get (get (list (filter (fn [x] (and x (= (get x 0) 'defn)))
                                 color-code)) 0) 1))
-
   `(shader
      (uniform vec2 ~res-name)
      (uniform vec2 ~center-name)
      (uniform float ~range-name)
      ~@color-code
+     ~(when post-process
+        post-process)
      (defn main []
-       ~@(if (= super-sampling 1)
+       (setv col (vec3 0.0))
+       ~(if (= super-sampling 1)
             `(do
               (setv uv (- (* (/ gl_FragCoord.xy (.xy ~res-name)) 2.) 1.0))
               (setv uv.y (* uv.y (- (/ (.y ~res-name) (.x ~res-name)))))
               (setv pos (+ ~center-name (* uv ~range-name)))
               (setv col (~color-func-name pos)))
              `(do
-               (setv col (vec3 0.0))
                (setv m 0)
                (while (< m ~super-sampling)
                  (setv n 0)
@@ -64,7 +85,10 @@
                    (setv n (+ n 1)))
                  (setv m (+ m 1)))
                (setv col (/ col (float (* ~super-sampling ~super-sampling))))))
-       (setv gl_FragColor (vec4 col 1.0)))))
+       (setv gl_FragColor (vec4 ~(if post-process
+                                     '(post-process col)
+                                     'col)
+                                1.0)))))
 
 (defn r [color] (get color 0))
 (defn g [color] (get color 1))
