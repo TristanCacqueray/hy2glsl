@@ -20,7 +20,7 @@
   (instance? HyList l))
 
 (setv gl-types '[int float vec2 vec3 vec4 mat2 mat3 mat4]
-      gl-proc {'dot 'float}
+      gl-proc {'dot 'float 'atan 'float 'cos 'float 'sin 'float}
       builtins
       '(shader
          (defn cSquare [c]
@@ -37,7 +37,21 @@
                  (setv ratio (/ c.y c.x))
                  (setv denom (* c.x (+ 1 (* ratio ratio))))
                  (return (vec2 (/ r denom) (/ (- (* r ratio)) denom))))))
-         ))
+         (defn hypot [c]
+           (setv x (abs c.x))
+           (setv y (abs c.y))
+           (setv t (min x y))
+           (setv x (max x y))
+           (setv t (/ t x))
+           (if (and (= c.x 0.0) (= c.y 0.0))
+               (return 0.0)
+               (return (* x (sqrt (+ 1.0 (* t t)))))))
+         (defn cPowr [c r]
+           (setv x (exp (* (log (hypot c)) r)))
+           (setv y (* (atan c.y c.x) r))
+           (vec2 (* x (cos y)) (* x (sin y))))
+         (defn cLog [c]
+           (vec2 (log (hypot c)) (atan c.x c.y)))))
 (defn builtin? [name]
   (for [builtin (cut builtins 1)]
     (if (= (get builtin 1) name)

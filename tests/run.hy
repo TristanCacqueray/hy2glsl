@@ -155,6 +155,73 @@ vec2 crDiv(float r, vec2 c) {
 }
 vec2 complex = crDiv(42.0, vec2(1.0));
 ]]]
+       ["Built-in: hypot"
+        `(shader
+           (setv hp (hypot (vec2 1.0))))
+        #[[
+
+float hypot(vec2 c) {
+  float x = abs(c.x);
+  float y = abs(c.y);
+  float t = min(x, y);
+  x = max(x, y);
+  t = (t / x);
+  if (c.x == 0.0 && c.y == 0.0) {
+    return 0.0;
+  } else {
+    return (x * sqrt((1.0 + (t * t))));
+  }
+}
+float hp = hypot(vec2(1.0));
+]]]
+       ["Built-in: cPowr"
+        `(shader
+           (setv z (cPowr (vec2 1.0) 42.)))
+        #[[
+
+float hypot(vec2 c) {
+  float x = abs(c.x);
+  float y = abs(c.y);
+  float t = min(x, y);
+  x = max(x, y);
+  t = (t / x);
+  if (c.x == 0.0 && c.y == 0.0) {
+    return 0.0;
+  } else {
+    return (x * sqrt((1.0 + (t * t))));
+  }
+}
+
+vec2 cPowr(vec2 c, float r) {
+  float x = exp((log(hypot(c)) * r));
+  float y = (atan(c.y, c.x) * r);
+  return vec2((x * cos(y)), (x * sin(y)));
+}
+vec2 z = cPowr(vec2(1.0), 42.0);
+]]]
+       ["Built-in: cLog"
+        `(shader
+           (setv z (cLog (vec2 1.0))))
+        #[[
+
+float hypot(vec2 c) {
+  float x = abs(c.x);
+  float y = abs(c.y);
+  float t = min(x, y);
+  x = max(x, y);
+  t = (t / x);
+  if (c.x == 0.0 && c.y == 0.0) {
+    return 0.0;
+  } else {
+    return (x * sqrt((1.0 + (t * t))));
+  }
+}
+
+vec2 cLog(vec2 c) {
+  return vec2(log(hypot(c)), atan(c.x, c.y));
+}
+vec2 z = cLog(vec2(1.0));
+]]]
        ["Library: vertex-dumb"
        (library.vertex-dumb)
        #[[
