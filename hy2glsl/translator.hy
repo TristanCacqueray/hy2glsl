@@ -64,7 +64,7 @@
       ;; GLSL '.' are valid
       (.join "." (map mangle (.split var-name '.))))
     (defn lookup [var-name &optional [env env]]
-      ;; Look in environment for variable type
+      "Return variable type from the environment"
       (setv var-name (mangle (get (.split var-name '.) 0)))
       (cond [(in var-name gl-env)
              (get gl-env var-name)]
@@ -72,19 +72,20 @@
              (get env var-name)]
             [True None]))
     (defn define [var-name var-type &optional [env env]]
-      ;; Set variable type
+      "Set a variable type"
       (setv var-name (mangle (get (.split var-name '.) 0)))
       (when (lookup var-name env)
         (print "warning: var" var-name "shadow the environment!"))
       (assoc env var-name (name var-type)))
     (defn copy-env [&optional [env env]]
-      ;; Copy the environment
+      "Copy the environment"
       (setv result {})
       (for [k env]
         (assoc result k (get env k)))
       result)
 
     (defn infer-type [expr &optional [env env]]
+      "Return the type of an expression"
       ;; Very primitive type inference...
       (defn infer [expr &optional [no-symbol False]]
         (cond [(and (expression? expr) (in (get expr 0) gl-types))
@@ -126,7 +127,7 @@
                       (not (expression? operator))
                       (not (in operator '(shader do version uniform attribute)))
                       (not (in "no-code-gen" env)))
-             ;; Inject any used-builtin
+             ;; Inject any used-builtin first
              (setv builtins (list (.values used-builtins)))
              (.clear used-builtins)
              (for [e builtins]
@@ -138,12 +139,17 @@
                   Syntax: (defn name [arg ...] (code))
                   )
               (when (len (get expr 2))
+                ;; Function arguments type shall exists after first-pass
+                ;; TODO: check for missing function call and print error
                 (setv arg-types (get function-arguments-types (get expr 1))))
+
+              ;; TODO: use translate operand to set those special environment
               (setv new-env {"in-function-body" True})
               (when (in "infer-function-type" env)
                 (assoc new-env "infer-function-type" True)
                 (assoc new-env "no-code-gen" True))
-              ;; Add argument to environment
+
+              ;; Add function argument to environment
               (for [arg (get expr 2)]
                 (if (lookup arg new-env)
                     (print "warning: shadow var:" arg))
@@ -152,16 +158,20 @@
               ;; Inject return operator if last expr is not a return
               (when (or (not (expression? (last expr)))
                         (not (in (get (last expr) 0) '[if do setv return])))
+                ;; TODO: walk if/do expression to inject return there too
                 (setv (get expr -1) (quasiquote
                                       (return (unquote (last expr))))))
+
               (setv return-type "void")
               (unless (in "infer-function-type" env)
                 ;; Do a first pass on function body to discover the type of
                 ;; the last expression
                 (setv tmp-env (copy-env new-env))
+                ;; TODO: use translate operand to set no-code-gen
                 (assoc tmp-env "no-code-gen" True)
                 (translate (cut expr 3) tmp-env)
                 (defn get-return [expr]
+                  "Get the first return expression"
                   (when (expression? expr)
                     (if (= (get expr 0) 'return)
                         (return (get expr 1))
@@ -378,8 +388,9 @@
   ;; Shift shader symbol
   (when (= (get code 0) 'shader)
     (setv code (cut code 1)))
-  ;; Trim None from macro expension
+
   (defn trim-none [code]
+    "Remove None expression from macro expansion"
     (setv result (HyExpression))
     (for [expr code]
       (when (= expr None)
@@ -389,6 +400,7 @@
                           expr)))
     result)
   (setv code (trim-none code))
+
   ;; Infer function argument type in reverse order
   (setv reverse (HyExpression) func-pos 0)
   (for [expr code]
@@ -399,7 +411,11 @@
            (.insert reverse func-pos expr)
            (setv func-pos (inc func-pos))]))
   (setv gl-env (make-gl-env))
+  ;; TODO: use translate operand to set no-code-gen or infer-function-type
   (translate reverse {"no-code-gen" True "infer-function-type" True})
+
   (setv gl-env (make-gl-env))
   (translate code {})
+
+  ;; Return shader string
   (.join "" shader))
