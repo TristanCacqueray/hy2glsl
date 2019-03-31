@@ -46,6 +46,8 @@
            (if (and (= c.x 0.0) (= c.y 0.0))
                (return 0.0)
                (return (* x (sqrt (+ 1.0 (* t t)))))))
+         (defn cAbs [c]
+           (hypot c))
          (defn cPowr [c r]
            (setv x (exp (* (log (hypot c)) r)))
            (setv y (* (atan c.y c.x) r))
