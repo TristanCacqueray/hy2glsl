@@ -349,6 +349,7 @@
                     (infer-type operand)))
                 (setv builtin (builtin? operator))
                 (when (and builtin (not (in operator used-builtins)))
+                  (translate builtin env)
                   (assoc used-builtins operator builtin)))
               (append (mangle operator) "(")
               (when (> (len expr) 1)
