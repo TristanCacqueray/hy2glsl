@@ -257,6 +257,10 @@
               (append "break;\n")]
 
              ;; Boolean logic
+             [(= operator '=)
+              (translate (get expr 1) env :term False)
+              (append " == ")
+              (translate (get expr 2) env :term False)]
              [(= operator 'or)
               (translate (get expr 1) env :term False)
               (for [operand (cut expr 2)]
