@@ -47,6 +47,10 @@
   (setv shader []
         function-arguments-types {}
         used-builtins {})
+  (defn make-gl-env []
+        {"gl_FragCoord" "vec2"
+         "gl_FragColor" "vec4"
+         "gl_Position" "vec4"})
   (defn translate [expr env &optional [indent 0] [term True]]
     (defn append [&rest code &kwargs kwargs]
       (unless (in "no-code-gen" env)
@@ -62,9 +66,11 @@
     (defn lookup [var-name &optional [env env]]
       ;; Look in environment for variable type
       (setv var-name (mangle (get (.split var-name '.) 0)))
-      (if (in var-name env)
-          (get env var-name)
-          None))
+      (cond [(in var-name gl-env)
+             (get gl-env var-name)]
+            [(in var-name env)
+             (get env var-name)]
+            [True None]))
     (defn define [var-name var-type &optional [env env]]
       ;; Set variable type
       (setv var-name (mangle (get (.split var-name '.) 0)))
@@ -133,7 +139,10 @@
                   )
               (when (len (get expr 2))
                 (setv arg-types (get function-arguments-types (get expr 1))))
-              (setv new-env (copy-env))
+              (setv new-env {"in-function-body" True})
+              (when (in "infer-function-type" env)
+                (assoc new-env "infer-function-type" True)
+                (assoc new-env "no-code-gen" True))
               ;; Add argument to environment
               (for [arg (get expr 2)]
                 (if (lookup arg new-env)
@@ -161,8 +170,9 @@
                           (if ret (return ret)))))
                   None)
                 (setv return-type (infer-type (get-return expr) tmp-env))
-                ;; Add function name to parent environment type
-                (define (get expr 1) return-type))
+
+                ;; Add function name to global environment
+                (define (get expr 1) return-type :env gl-env))
 
               (append "\n" :indent 0)
               (append return-type " " (mangle (get expr 1)) "("
@@ -187,7 +197,8 @@
                   (do
                     (define
                       (get expr 1)
-                      (infer-type (get expr 2)))
+                      (infer-type (get expr 2))
+                      :env (if (in "in-function-body" env) env gl-env))
                     (setv type-str (+ (lookup (get expr 1)) " "))))
               (append type-str (mangle-var (get expr 1)) " = ")
               (translate (get expr 2) env :term False)
@@ -216,14 +227,14 @@
               #_(comment
                   Syntax: (uniform type name)
                   )
-              (define (mangle (get expr 2)) (get expr 1))
+              (define (mangle (get expr 2)) (get expr 1) :env gl-env)
               (append "uniform " (get expr 1)
                       " " (mangle (get expr 2)) ";\n")]
              [(= operator 'attribute)
               #_(comment
                   Syntax: (attribute type name)
                   )
-              (define (mangle (get expr 2)) (get expr 1))
+              (define (mangle (get expr 2)) (get expr 1) :env gl-env)
               (append "attribute " (get expr 1)
                       " " (mangle (get expr 2)) ";\n")]
 
@@ -386,11 +397,8 @@
           [True
            (.insert reverse func-pos expr)
            (setv func-pos (inc func-pos))]))
-  (setv default-env {"gl_FragCoord" "vec2"
-                     "gl_Position" "vec4"
-                     "gl_FragColor" "vec4"})
-  (setv first-pass-env (.copy default-env))
-  (.update first-pass-env {"no-code-gen" True "infer-function-type" True})
-  (translate reverse first-pass-env)
-  (translate code default-env)
+  (setv gl-env (make-gl-env))
+  (translate reverse {"no-code-gen" True "infer-function-type" True})
+  (setv gl-env (make-gl-env))
+  (translate code {})
   (.join "" shader))

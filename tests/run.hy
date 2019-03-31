@@ -66,21 +66,25 @@ color.x = 42.0;
        ["if else form"
         '(do
           (setv color (vec4 0.))
-          (if True
-              (do
-                (setv color (vec4 1.0))
-                (setv inner-var 42.0))
-              (do
-                (setv color (vec4 0.0))
-                (setv inner-var 42))))
+          (defn test-if []
+            (if True
+                (do
+                  (setv color (vec4 1.0))
+                  (setv inner-var 42.0))
+                (do
+                  (setv color (vec4 0.0))
+                  (setv inner-var 42)))))
         #[[
 vec4 color = vec4(0.0);
-if (true) {
-  color = vec4(1.0);
-  float inner_var = 42.0;
-} else {
-  color = vec4(0.0);
-  int inner_var = 42;
+
+void test_if(void) {
+  if (true) {
+    color = vec4(1.0);
+    float inner_var = 42.0;
+  } else {
+    color = vec4(0.0);
+    int inner_var = 42;
+  }
 }
 ]]]
        ["Function signature inference"
