@@ -60,7 +60,7 @@
     (if (= (get builtin 1) name)
         (return builtin))))
 
-(defn hy2glsl [code]
+(defn hy2glsl [code &optional params]
   (setv shader []
         function-arguments-types {}
         used-builtins {})
@@ -254,9 +254,13 @@
               #_(comment
                   Syntax: (uniform type name)
                   )
-              (define (mangle (get expr 2)) (get expr 1) :env gl-env)
-              (append "uniform " (get expr 1)
-                      " " (mangle (get expr 2)) ";\n")]
+              (setv uniform-type (get expr 1)
+                    uniform-name (mangle (get expr 2)))
+              (define uniform-name uniform-type :env gl-env)
+              (when (not (none? params))
+                (assoc params uniform-name {'name uniform-name
+                                            'type uniform-type}))
+              (append "uniform " uniform-type " " uniform-name ";\n")]
              [(= operator 'attribute)
               #_(comment
                   Syntax: (attribute type name)

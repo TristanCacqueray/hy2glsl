@@ -326,3 +326,34 @@ vec3 main(void) {
       (do
         (print "== KO:" test "==")
         (print result))))
+
+(for [[test hy-input expected-params]
+      [["Library: fragment-plane params"
+        (library.fragment-plane `(defn color [uv] (vec3 0.)))
+        {
+         "iResolution"
+         {
+          'name "iResolution"
+          'type 'vec2
+          }
+         "center"
+         {
+          'name "center"
+          'type 'vec2
+          }
+         "range"
+         {
+          'name "range"
+          'type 'float
+          }
+         }]]]
+
+  (if (and (= (len sys.argv) 2) (not (in (get sys.argv 1) test)))
+      (continue))
+  (setv params {})
+  (hy2glsl hy-input params)
+  (if (= params expected-params)
+      (print "== OK:" test "==")
+      (do
+        (print "== KO:" test "==")
+        (print params))))
