@@ -27,8 +27,13 @@
 #version 450
 #extension GL_NV_gpu_shader_fp64 : require
 uniform float iTime;
-]]
-        ]
+]]]
+       ["Uniform metadata"
+        '(shader
+           (uniform float mod :default 1.0))
+        #[[
+uniform float mod; // 1.0;
+]]]
        ["Function definition"
        '(shader
          (defn empty-vector [] (vec4 0.0))
@@ -328,7 +333,17 @@ vec3 main(void) {
         (print result))))
 
 (for [[test hy-input expected-params]
-      [["Library: fragment-plane params"
+      [["Uniform metadata params"
+        '(shader (uniform float mod :default 1.0))
+        {
+         "mod"
+         {
+          'name "mod"
+          'type 'float
+          'default 1.0
+          }
+         }]
+       ["Library: fragment-plane params"
         (library.fragment-plane `(defn color [uv] (vec3 0.)))
         {
          "iResolution"
@@ -347,7 +362,6 @@ vec3 main(void) {
           'type 'float
           }
          }]]]
-
   (if (and (= (len sys.argv) 2) (not (in (get sys.argv 1) test)))
       (continue))
   (setv params {})

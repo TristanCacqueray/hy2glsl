@@ -60,6 +60,34 @@
     (if (= (get builtin 1) name)
         (return builtin))))
 
+(defn split-keywords [expr]
+  "Return (, expr keyword-dict) tuple"
+  (setv result (HyExpression)
+        keywords {}
+        pos 0)
+  (while (< pos (len expr))
+    (if (keyword? (get expr pos))
+        ;; TODO: fail safe when keyword value doesn't exists.
+        (do
+          (assoc keywords (get expr pos) (get expr (inc pos)))
+          (setv pos (inc pos)))
+        (.append result (get expr pos)))
+    (setv pos (inc pos)))
+  (, result keywords))
+
+(defn getd [col key &optional [val None]]
+  "Get with optional default"
+  (if (in key col)
+      (get col key)
+      val))
+
+(defn trim-col [col]
+  "Trim a collection of the empty values"
+  (setv res {})
+  (for [[k v] (.items col)]
+    (unless (none? v) (assoc res k v)))
+  res)
+
 (defn hy2glsl [code &optional params]
   (setv shader []
         function-arguments-types {}
@@ -254,13 +282,22 @@
               #_(comment
                   Syntax: (uniform type name)
                   )
-              (setv uniform-type (get expr 1)
-                    uniform-name (mangle (get expr 2)))
-              (define uniform-name uniform-type :env gl-env)
+              (setv [expr keywords] (split-keywords expr)
+                    uparams (trim-col {
+                                       'type (get expr 1)
+                                       'name (mangle (get expr 2))
+                                       'default (getd keywords ':default)
+                                       'min (getd keywords ':min)
+                                       'max (getd keywords ':max)
+                                       }))
+              (define (get uparams 'name) (get uparams 'type) :env gl-env)
               (when (not (none? params))
-                (assoc params uniform-name {'name uniform-name
-                                            'type uniform-type}))
-              (append "uniform " uniform-type " " uniform-name ";\n")]
+                (assoc params (get uparams 'name) uparams))
+              (append "uniform " (get uparams 'type) " "
+                      (get uparams 'name) ";")
+              (unless (none? (getd uparams 'default))
+                (append " // " (getd uparams 'default) ";"))
+              (append "\n")]
              [(= operator 'attribute)
               #_(comment
                   Syntax: (attribute type name)
