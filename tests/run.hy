@@ -251,10 +251,11 @@ vec3 color(vec2 uv) {
 }
 
 void main(void) {
+  vec3 col = vec3(0.0);
   vec2 uv = (((gl_FragCoord.xy / iResolution.xy) * 2.0) - 1.0);
   uv.y = (uv.y * -(iResolution.y / iResolution.x));
   vec2 pos = (center + (uv * range));
-  vec3 col = color(pos);
+  col = color(pos);
   gl_FragColor = vec4(col, 1.0);
 }
 ]]]
