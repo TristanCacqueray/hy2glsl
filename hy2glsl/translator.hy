@@ -14,11 +14,8 @@
 ;; You should have received a copy of the GNU General Public License
 ;; along with Hy2glsl.  If not, see <https://www.gnu.org/licenses/>.
 
-;; Missing core procedures discussed in: https://github.com/hylang/hy/pull/1762
 (defn expression? [e]
-  (instance? HyExpression e))
-(defn list? [l]
-  (instance? HyList l))
+  (or (instance? list e) (instance? HyExpression e)))
 
 (setv gl-types '[int float vec2 vec3 vec4 mat2 mat3 mat4]
       gl-proc {'dot 'float 'atan 'float 'cos 'float 'sin 'float}
@@ -62,7 +59,7 @@
 
 (defn split-keywords [expr]
   "Return (, expr keyword-dict) tuple"
-  (setv result (HyExpression)
+  (setv result []
         keywords {}
         pos 0)
   (while (< pos (len expr))
@@ -87,6 +84,15 @@
   (for [[k v] (.items col)]
     (unless (none? v) (assoc res k v)))
   res)
+
+(defn mutable-expressions [code]
+  "Convert HyExpressions to mutable list"
+  (setv mutable-code [])
+  (for [exp code]
+    (.append mutable-code (if (instance? HyExpression exp)
+                              (mutable-expressions exp)
+                              exp)))
+  mutable-code)
 
 (defn hy2glsl [code &optional params]
   (setv shader []
@@ -176,7 +182,7 @@
              (setv builtins (list (.values used-builtins)))
              (.clear used-builtins)
              (for [e builtins]
-               (translate e env)))
+               (translate (mutable-expressions e) env)))
            (cond
              ;; Hy Functions/variables to glsl
              [(= operator 'defn)
@@ -417,7 +423,7 @@
                     (infer-type operand)))
                 (setv builtin (builtin? operator))
                 (when (and builtin (not (in operator used-builtins)))
-                  (translate builtin env)
+                  (translate (mutable-expressions builtin) env)
                   (assoc used-builtins operator builtin)))
               (append (mangle operator) "(")
               (when (> (len expr) 1)
@@ -449,7 +455,7 @@
 
   (defn trim-none [code]
     "Remove None expression from macro expansion"
-    (setv result (HyExpression))
+    (setv result [])
     (for [expr code]
       (when (= expr None)
         (continue))
@@ -460,7 +466,7 @@
   (setv code (trim-none code))
 
   ;; Infer function argument type in reverse order
-  (setv reverse (HyExpression) func-pos 0)
+  (setv reverse [] func-pos 0)
   (for [expr code]
     ;; Keep global at the top, function at the bottom in reverse order
     (setv operator (get expr 0))
