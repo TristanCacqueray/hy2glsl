@@ -19,7 +19,7 @@ from setuptools import find_packages, setup
 
 setup(
     name="hy2glsl",
-    version="0.0.1",
+    version="0.0.2",
     install_requires=['hy'],
     packages=find_packages(exclude=['tests']),
     package_data={
@@ -27,9 +27,10 @@ setup(
     },
     author="Tristan de Cacqueray",
     author_email="tristanC@wombatt.eu",
-    long_description="Hy to GLSL Language Translator",
+    long_description=open("README.md").read(),
+    long_description_content_type='text/markdown',
     license="GPL-3",
-    url="https://gitlab.com/TristanCacqueray/hy2glsl",
+    url="https://github.com/TristanCacqueray/hy2glsl",
     platforms=['any'],
     python_requires='>=3.4',
     classifiers=[
